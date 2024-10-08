@@ -3,13 +3,28 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	controller "github.com/kimosapp/poc/internal/controller/organization"
 	userController "github.com/kimosapp/poc/internal/controller/users"
+	logging2 "github.com/kimosapp/poc/internal/core/ports/logging"
+	organizationRepository "github.com/kimosapp/poc/internal/core/ports/repository/organizations"
+	roleRepository "github.com/kimosapp/poc/internal/core/ports/repository/organizations/role"
+	teamRepository "github.com/kimosapp/poc/internal/core/ports/repository/organizations/team"
+	teamMemberRepository "github.com/kimosapp/poc/internal/core/ports/repository/organizations/team-member"
+	userOrganizationRepository "github.com/kimosapp/poc/internal/core/ports/repository/organizations/user-organization"
+	userRepository "github.com/kimosapp/poc/internal/core/ports/repository/users"
+	organization "github.com/kimosapp/poc/internal/core/usercase/organizations"
 	usecase "github.com/kimosapp/poc/internal/core/usercase/users"
 	"github.com/kimosapp/poc/internal/infrastructure/configuration"
 	"github.com/kimosapp/poc/internal/infrastructure/db"
 	"github.com/kimosapp/poc/internal/infrastructure/logging"
+	organizationRepositoryPostgres "github.com/kimosapp/poc/internal/infrastructure/repository/postgres/organizations"
+	roleRepositoryPostgres "github.com/kimosapp/poc/internal/infrastructure/repository/postgres/organizations/role"
+	teamRepositoryPostgres "github.com/kimosapp/poc/internal/infrastructure/repository/postgres/organizations/team"
+	teamMemberRepositoryPostgres "github.com/kimosapp/poc/internal/infrastructure/repository/postgres/organizations/team-member"
+	userOrganizationRepositoryPostgres "github.com/kimosapp/poc/internal/infrastructure/repository/postgres/organizations/user-organization"
 	userPostgres "github.com/kimosapp/poc/internal/infrastructure/repository/postgres/users"
 	"github.com/kimosapp/poc/internal/infrastructure/server"
+	"github.com/kimosapp/poc/internal/middleware"
 	"log"
 	"os"
 	"os/signal"
@@ -34,8 +49,25 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to new logger err=%s\n", err.Error())
 	}
-	// Create the UserRepository
+
 	userRepo := userPostgres.NewUserRepository(conn)
+	orgRepo := organizationRepositoryPostgres.NewOrganizationRepository(conn)
+	userOrgRepo := userOrganizationRepositoryPostgres.NewUserOrganizationRepository(conn)
+	roleRepo := roleRepositoryPostgres.NewRoleRepository(conn)
+	teamRepo := teamRepositoryPostgres.NewTeamRepository(conn)
+	teamMemberRepo := teamMemberRepositoryPostgres.NewTeamMemberRepository(conn)
+
+	initOrganizationController(
+		instance,
+		orgRepo,
+		userOrgRepo,
+		roleRepo,
+		teamRepo,
+		teamMemberRepo,
+		userRepo,
+		middleware.NewAuthMiddleware(userRepo),
+		logger,
+	)
 
 	createUserUseCase := usecase.NewCreateUserUseCase(userRepo, logger)
 	authenticateUserUseCase := usecase.NewAuthenticateUserUseCase(
@@ -47,12 +79,16 @@ func main() {
 		userRepo,
 		logger,
 	)
+
+	authMiddleware := middleware.NewAuthMiddleware(userRepo)
+
 	userControllerInstance := userController.NewUserController(
 		instance,
 		logger,
 		createUserUseCase,
 		authenticateUserUseCase,
 		getUserUseCase,
+		authMiddleware,
 		updateUserProfileUseCase,
 	)
 
@@ -77,4 +113,81 @@ func main() {
 	)
 	<-c
 	log.Println("graceful shutdown...")
+}
+
+func initOrganizationController(
+	instance *gin.Engine,
+	orgRepo organizationRepository.Repository,
+	userOrgRepo userOrganizationRepository.Repository,
+	roleRepo roleRepository.Repository,
+	teamRepo teamRepository.Repository,
+	teamMemberRepo teamMemberRepository.Repository,
+	userRepo userRepository.Repository,
+	middleware *middleware.AuthMiddleware,
+	logger logging2.Logger,
+) {
+	createOrganizationUseCase := organization.NewCreateOrganizationUseCase(
+		orgRepo,
+		userOrgRepo,
+		roleRepo,
+		userRepo,
+		logger,
+	)
+	getOrgByUserIdAndOrgIdUseCase := organization.NewGetOrganizationByOrgIdAndUserIdUseCase(
+		orgRepo,
+		logger,
+	)
+	getOrganizationsByUserIdUseCase := organization.NewGetOrganizationsByUserUseCase(
+		orgRepo,
+		logger,
+	)
+
+	checkIfUserHasEnoughPermissionsUseCase := organization.NewCheckUserHasPermissionsToMakeAction(
+		userOrgRepo,
+		logger,
+	)
+
+	createOrganizationUserUseCase := organization.NewCreateOrganizationMemberUseCase(
+		orgRepo,
+		userOrgRepo,
+		roleRepo,
+		userRepo,
+		checkIfUserHasEnoughPermissionsUseCase,
+		logger,
+	)
+	removeOrganizationUserUseCase := organization.NewRemoveOrganizationMemberUseCase(
+		orgRepo,
+		userOrgRepo,
+		logger,
+	)
+
+	createTeamUseCase := organization.NewCreateTeamUseCase(
+		userOrgRepo,
+		teamRepo,
+		teamMemberRepo,
+		checkIfUserHasEnoughPermissionsUseCase,
+		logger,
+	)
+
+	addMemberToTeamUseCase := organization.NewAddTeamMembersUseCase(
+		userOrgRepo,
+		teamRepo,
+		teamMemberRepo,
+		checkIfUserHasEnoughPermissionsUseCase,
+		logger,
+	)
+
+	organizationController := controller.NewOrganizationController(
+		instance,
+		logger,
+		createOrganizationUseCase,
+		getOrgByUserIdAndOrgIdUseCase,
+		getOrganizationsByUserIdUseCase,
+		createOrganizationUserUseCase,
+		removeOrganizationUserUseCase,
+		createTeamUseCase,
+		addMemberToTeamUseCase,
+		middleware,
+	)
+	organizationController.InitRouter()
 }

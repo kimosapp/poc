@@ -12,12 +12,12 @@ import (
 )
 
 type AuthenticateUserUseCase struct {
-	userRepository userR.UserRepository
+	userRepository userR.Repository
 	logger         logging.Logger
 }
 
 func NewAuthenticateUserUseCase(
-	ur userR.UserRepository,
+	ur userR.Repository,
 	logger logging.Logger,
 ) *AuthenticateUserUseCase {
 	return &AuthenticateUserUseCase{userRepository: ur, logger: logger}

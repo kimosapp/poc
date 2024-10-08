@@ -3,7 +3,7 @@ package users
 import (
 	"github.com/kimosapp/poc/internal/core/errors"
 	"github.com/kimosapp/poc/internal/core/model/commons/is_valid"
-	"github.com/kimosapp/poc/internal/core/model/entity/users"
+	entity "github.com/kimosapp/poc/internal/core/model/entity/users"
 	users2 "github.com/kimosapp/poc/internal/core/model/request/users"
 	"github.com/kimosapp/poc/internal/core/ports/logging"
 	userR "github.com/kimosapp/poc/internal/core/ports/repository/users"
@@ -12,19 +12,19 @@ import (
 )
 
 type CreateUserUseCase struct {
-	userRepository userR.UserRepository
+	userRepository userR.Repository
 	logger         logging.Logger
 }
 
 func NewCreateUserUseCase(
-	ur userR.UserRepository,
+	ur userR.Repository,
 	logger logging.Logger,
 ) *CreateUserUseCase {
 	return &CreateUserUseCase{userRepository: ur, logger: logger}
 }
 
 func (p *CreateUserUseCase) Handler(req *users2.SignUpRequest) (
-	*users.User,
+	*entity.User,
 	*errors.AppError,
 ) {
 	appError := validateSignUpRequest(req)
@@ -57,7 +57,7 @@ func (p *CreateUserUseCase) Handler(req *users2.SignUpRequest) (
 			errors.ErrorCreatingUser,
 		).AppError
 	}
-	user = &users.User{
+	user = &entity.User{
 		Email:                      req.Email,
 		Hash:                       hashedPassword,
 		BadLoginAttempts:           0,

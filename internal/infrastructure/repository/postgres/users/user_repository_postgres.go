@@ -50,6 +50,10 @@ func (repo *UserRepositoryPostgres) GetPage(
 		SetTotalPages(totalPages).
 		Build(), nil
 }
+func (repo *UserRepositoryPostgres) GetAllByEmail(emails []string) ([]entity.User, error) {
+	//TODO implement this
+	return nil, nil
+}
 
 func (repo *UserRepositoryPostgres) GetByID(id string) (*entity.User, error) {
 	var user entity.User

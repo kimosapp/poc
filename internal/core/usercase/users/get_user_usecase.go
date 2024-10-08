@@ -8,12 +8,12 @@ import (
 )
 
 type GetUserUseCase struct {
-	userRepository repository.UserRepository
+	userRepository repository.Repository
 	logger         logging.Logger
 }
 
 func NewGetUserUseCase(
-	ur repository.UserRepository,
+	ur repository.Repository,
 	logger logging.Logger,
 ) *GetUserUseCase {
 	return &GetUserUseCase{userRepository: ur, logger: logger}

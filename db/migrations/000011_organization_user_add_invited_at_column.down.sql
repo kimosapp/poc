@@ -1,0 +1,1 @@
+ALTER TABLE "organization_users" REMOVE COLUMN "invited_at"

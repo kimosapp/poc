@@ -2,15 +2,16 @@ package users
 
 import (
 	"github.com/kimosapp/poc/internal/core/model/commons/types"
-	"github.com/kimosapp/poc/internal/core/model/entity/users"
+	userEntity "github.com/kimosapp/poc/internal/core/model/entity/users"
 )
 
-type UserRepository interface {
-	GetAll() ([]users.User, error)
-	GetPage(pageNumber int, pageSize int) (types.Page[users.User], error)
-	GetByID(id string) (*users.User, error)
-	GetByEmail(email string) (*users.User, error)
-	Create(user *users.User) (*users.User, error)
-	Update(user *users.User) (*users.User, error)
+type Repository interface {
+	GetAll() ([]userEntity.User, error)
+	GetPage(pageNumber int, pageSize int) (types.Page[userEntity.User], error)
+	GetByID(id string) (*userEntity.User, error)
+	GetByEmail(email string) (*userEntity.User, error)
+	Create(user *userEntity.User) (*userEntity.User, error)
+	Update(user *userEntity.User) (*userEntity.User, error)
 	Delete(id string) error
+	GetAllByEmail(emails []string) ([]userEntity.User, error)
 }

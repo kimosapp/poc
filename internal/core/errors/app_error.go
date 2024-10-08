@@ -65,6 +65,23 @@ func NewBadRequestError(message, description string, code ErrorCode) *BadRequest
 type InternalServerError struct {
 	*AppError
 }
+type ForbiddenError struct {
+	*AppError
+}
+type ConflictError struct {
+	*AppError
+}
+
+func NewConflictError(message, description string, code ErrorCode) *ConflictError {
+	return &ConflictError{
+		AppError: &AppError{
+			Message:     message,
+			Code:        string(code),
+			Description: description,
+			HTTPStatus:  http.StatusConflict,
+		},
+	}
+}
 
 func NewInternalServerError(message, description string, code ErrorCode) *InternalServerError {
 	return &InternalServerError{
@@ -73,6 +90,16 @@ func NewInternalServerError(message, description string, code ErrorCode) *Intern
 			Code:        string(code),
 			Description: description,
 			HTTPStatus:  http.StatusInternalServerError,
+		},
+	}
+}
+func NewForbiddenError(message, description string, code ErrorCode) *ForbiddenError {
+	return &ForbiddenError{
+		AppError: &AppError{
+			Message:     message,
+			Code:        string(code),
+			Description: description,
+			HTTPStatus:  http.StatusForbidden,
 		},
 	}
 }

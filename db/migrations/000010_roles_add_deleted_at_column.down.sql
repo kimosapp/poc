@@ -1,0 +1,1 @@
+ALTER TABLE "roles" REMOVE COLUMN "deleted_at"

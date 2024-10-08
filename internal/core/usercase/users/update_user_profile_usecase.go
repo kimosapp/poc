@@ -9,12 +9,12 @@ import (
 )
 
 type UpdateUserProfileUseCase struct {
-	userRepository repository.UserRepository
+	userRepository repository.Repository
 	logger         logging.Logger
 }
 
 func NewUpdateUserProfileUseCase(
-	ur repository.UserRepository,
+	ur repository.Repository,
 	logger logging.Logger,
 ) *UpdateUserProfileUseCase {
 	return &UpdateUserProfileUseCase{userRepository: ur, logger: logger}

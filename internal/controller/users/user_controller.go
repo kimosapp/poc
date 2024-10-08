@@ -15,6 +15,7 @@ type UserController struct {
 	authenticateUserUseCase  *usecase.AuthenticateUserUseCase
 	getUserUseCase           *usecase.GetUserUseCase
 	updateUserProfileUseCase *usecase.UpdateUserProfileUseCase
+	authMiddleware           *middleware.AuthMiddleware
 	logger                   logging.Logger
 }
 
@@ -24,6 +25,7 @@ func NewUserController(
 	createUserUseCase *usecase.CreateUserUseCase,
 	authenticateUserUseCase *usecase.AuthenticateUserUseCase,
 	getUserUseCase *usecase.GetUserUseCase,
+	authMiddleware *middleware.AuthMiddleware,
 	updateUserProfileUseCase *usecase.UpdateUserProfileUseCase,
 ) UserController {
 	return UserController{
@@ -32,6 +34,7 @@ func NewUserController(
 		createUserUseCase:        createUserUseCase,
 		authenticateUserUseCase:  authenticateUserUseCase,
 		getUserUseCase:           getUserUseCase,
+		authMiddleware:           authMiddleware,
 		updateUserProfileUseCase: updateUserProfileUseCase,
 	}
 }
@@ -41,7 +44,7 @@ func (u UserController) InitRouter() {
 	api.POST("/signup", u.signUp)
 	api.POST("/login", u.login)
 	api.GET("/validation/:validationId", u.validateAccount)
-	secured := api.Group("", middleware.Auth())
+	secured := api.Group("", u.authMiddleware.Auth())
 	{
 		secured.GET("/me", u.me)
 		secured.PUT("/me", u.updateProfile)
