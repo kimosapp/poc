@@ -1,7 +1,7 @@
-name: Build and Test on Main
+name: Build and Test Pull Requests
 
 on:
-  push:
+  pull_request:
     branches:
       - main
 
