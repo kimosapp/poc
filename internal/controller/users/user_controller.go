@@ -22,7 +22,6 @@ type UserController struct {
 func NewUserController(
 	gin *gin.Engine,
 	logger logging.Logger,
-	createUserUseCase *usecase.CreateUserUseCase,
 	authenticateUserUseCase *usecase.AuthenticateUserUseCase,
 	getUserUseCase *usecase.GetUserUseCase,
 	authMiddleware *middleware.AuthMiddleware,
@@ -31,7 +30,6 @@ func NewUserController(
 	return UserController{
 		gin:                      gin,
 		logger:                   logger,
-		createUserUseCase:        createUserUseCase,
 		authenticateUserUseCase:  authenticateUserUseCase,
 		getUserUseCase:           getUserUseCase,
 		authMiddleware:           authMiddleware,
@@ -40,8 +38,7 @@ func NewUserController(
 }
 
 func (u UserController) InitRouter() {
-	api := u.gin.Group("/api/v1/user")
-	api.POST("/signup", u.signUp)
+	api := u.gin.Group("/api/v1/users")
 	api.POST("/login", u.login)
 	api.GET("/validation/:validationId", u.validateAccount)
 	secured := api.Group("", u.authMiddleware.Auth())
@@ -67,25 +64,6 @@ func (u UserController) login(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, result)
-	return
-}
-
-func (u UserController) signUp(c *gin.Context) {
-	signUpRequest, err := u.parseSignUpRequest(c)
-	if err != nil {
-		c.AbortWithStatusJSON(
-			http.StatusBadRequest, &gin.H{
-				"message": "Invalid request",
-			},
-		)
-		return
-	}
-	_, appError := u.createUserUseCase.Handler(signUpRequest)
-	if appError != nil {
-		c.AbortWithStatusJSON(appError.HTTPStatus, appError)
-		return
-	}
-	c.JSON(http.StatusCreated, gin.H{})
 	return
 }
 

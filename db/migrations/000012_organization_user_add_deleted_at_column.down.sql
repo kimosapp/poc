@@ -1,1 +1,0 @@
-ALTER TABLE "organization_users" REMOVE COLUMN "deleted_at"

@@ -69,7 +69,8 @@ func main() {
 		logger,
 	)
 
-	createUserUseCase := usecase.NewCreateUserUseCase(userRepo, logger)
+	//TODO remove this
+	//createUserUseCase := usecase.NewCreateUserUseCase(userRepo, logger)
 	authenticateUserUseCase := usecase.NewAuthenticateUserUseCase(
 		userRepo,
 		logger,
@@ -85,7 +86,6 @@ func main() {
 	userControllerInstance := userController.NewUserController(
 		instance,
 		logger,
-		createUserUseCase,
 		authenticateUserUseCase,
 		getUserUseCase,
 		authMiddleware,

@@ -23,6 +23,7 @@ type User struct {
 	BadLoginAttempts           int            `gorm:"column:bad_attempts"`
 	IsLocked                   bool           `gorm:"column:is_locked"`
 	Hash                       string         `gorm:"column:hash"`
+	OrganizationID             string         `gorm:"column:organization_id"`
 }
 
 func (User) TableName() string {

@@ -52,25 +52,29 @@ func NewOrganizationController(
 
 func (oc OrganizationController) InitRouter() {
 
-	api := oc.gin.Group("/api/v1/organizations", oc.middleware.Auth())
-	// api.GET("/:orgId/teams/:teamId/members", oc.getTeamMembers)
-	api.POST("/:orgId/teams/:teamId/members", oc.addTeamMembers)
-	api.DELETE("/:orgId/teams/:teamId/members", oc.removeTeamMembers)
-	api.POST("/:orgId/teams/:teamId", oc.cloneTeam)
-	api.GET("/:orgId/teams/:teamId", oc.getTeamById)
-	api.PUT("/:orgId/teams/:teamId", oc.updateTeam)
-	api.DELETE("/:orgId/teams/:teamId", oc.deleteTeam)
-	api.GET("/:orgId/teams", oc.getTeamsByOrganizationIdAndUser)
-	api.POST("/:orgId/teams", oc.createTeam)
-	api.GET("/:orgId/members/:memberId", oc.getOrganizationMemberById)
-	api.DELETE("/:orgId/members/:memberId", oc.removeOrganizationMember)
-	api.POST("/:orgId/members", oc.createOrganizationMember)
-	//TODO implement billing methods
-	api.PUT("/:orgId", oc.updateOrganization)
-	api.DELETE("/:orgId", oc.deleteOrganization)
-	api.GET("/:orgId", oc.getOrganization)
+	api := oc.gin.Group("/api/v1/organizations")
 	api.POST("", oc.createOrganization)
-	api.GET("", oc.getOrganizations)
+
+	api.Group("", oc.middleware.Auth())
+	{
+		// api.GET("/:orgId/teams/:teamId/members", oc.getTeamMembers)
+		api.POST("/:orgId/teams/:teamId/members", oc.addTeamMembers)
+		api.DELETE("/:orgId/teams/:teamId/members", oc.removeTeamMembers)
+		api.POST("/:orgId/teams/:teamId", oc.cloneTeam)
+		api.GET("/:orgId/teams/:teamId", oc.getTeamById)
+		api.PUT("/:orgId/teams/:teamId", oc.updateTeam)
+		api.DELETE("/:orgId/teams/:teamId", oc.deleteTeam)
+		api.GET("/:orgId/teams", oc.getTeamsByOrganizationIdAndUser)
+		api.POST("/:orgId/teams", oc.createTeam)
+		api.GET("/:orgId/members/:memberId", oc.getOrganizationMemberById)
+		api.DELETE("/:orgId/members/:memberId", oc.removeOrganizationMember)
+		api.POST("/:orgId/members", oc.createOrganizationMember)
+		//TODO implement billing methods
+		api.PUT("/:orgId", oc.updateOrganization)
+		api.DELETE("/:orgId", oc.deleteOrganization)
+		api.GET("/:orgId", oc.getOrganization)
+		api.GET("", oc.getOrganizations)
+	}
 }
 
 //TODO move it to user organization activity service
@@ -176,7 +180,6 @@ func (oc OrganizationController) deleteOrganization(c *gin.Context) {
 }
 
 func (oc OrganizationController) createOrganization(c *gin.Context) {
-	userId := c.GetString("kimosUserId")
 	organization, err := oc.parseCreateOrganizationRequest(c)
 	if err != nil {
 		//TODO wrapp error
@@ -187,7 +190,7 @@ func (oc OrganizationController) createOrganization(c *gin.Context) {
 		)
 		return
 	}
-	result, appError := oc.createOrganizationUseCase.Handler(userId, organization)
+	result, appError := oc.createOrganizationUseCase.Handler(organization)
 	if appError != nil {
 		c.AbortWithStatusJSON(appError.HTTPStatus, appError)
 		return

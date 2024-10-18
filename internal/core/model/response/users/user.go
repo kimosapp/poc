@@ -5,10 +5,10 @@ import (
 )
 
 type UserLightDTO struct {
-	ID        string
-	LastName  string
-	FirstName string
-	Email     string
-	LastLogin time.Time
-	CreatedAt time.Time
+	ID        string    `json:"id"`
+	LastName  string    `json:"lastName"`
+	FirstName string    `json:"firstName"`
+	Email     string    `json:"email"`
+	LastLogin time.Time `json:"lastLogin"`
+	CreatedAt time.Time `json:"createdAt"`
 }

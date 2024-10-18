@@ -2,8 +2,8 @@ package organization
 
 import (
 	"github.com/kimosapp/poc/internal/core/errors"
-	roleConstant "github.com/kimosapp/poc/internal/core/model/constants/roles"
 	"github.com/kimosapp/poc/internal/core/model/entity/organization"
+	users "github.com/kimosapp/poc/internal/core/model/entity/users"
 	request "github.com/kimosapp/poc/internal/core/model/request/organizations"
 	"github.com/kimosapp/poc/internal/core/ports/logging"
 	organizationRepository "github.com/kimosapp/poc/internal/core/ports/repository/organizations"
@@ -11,7 +11,7 @@ import (
 	userOrganizationRepository "github.com/kimosapp/poc/internal/core/ports/repository/organizations/user-organization"
 	userR "github.com/kimosapp/poc/internal/core/ports/repository/users"
 	"github.com/kimosapp/poc/internal/core/utils"
-	"time"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // TODO update errors
@@ -40,22 +40,44 @@ func NewCreateOrganizationUseCase(
 }
 
 func (cu CreateOrganizationUseCase) Handler(
-	userId string,
 	request *request.CreateOrganizationRequest,
 ) (*organization.Organization, *errors.AppError) {
+	persistedOrg, err := cu.organizationRepository.GetByBillingEmail(request.BillingEmail)
+	if err != nil {
+		cu.logger.Error("Error getting organization by billing email\n", err)
+		return nil, errors.NewInternalServerError(
+			"Error creating the organization",
+			"",
+			errors.ErrorCreatingUser,
+		).AppError
+	}
+
+	if persistedOrg.ID != "" {
+		cu.logger.Error(
+			"Error creating the organization: The billing email has associated"+
+				" another organization\n", err,
+		)
+		return nil, errors.NewBadRequestError(
+			"The email "+request.BillingEmail+" has created another organization",
+			"",
+			errors.ErrorCreatingUser,
+		).AppError
+	}
+
 	tx := cu.organizationRepository.BeginTransaction()
 	defer tx.Rollback()
-
 	organizationResult, err := cu.organizationRepository.Create(
 		&organization.Organization{
-			Name:         request.Name,
+			Name:         request.OrganizationName,
 			BillingEmail: request.BillingEmail,
-			CreatedBy:    userId,
-			Slug:         utils.CreateSlug(request.Name),
+			Slug:         utils.CreateSlug(request.OrganizationName),
 		},
 		tx,
 	)
 	if err != nil {
+		cu.logger.Error(
+			"Error creating the organization: \n", err,
+		)
 		tx.Rollback()
 		return nil, errors.NewInternalServerError(
 			"Error creating the organization",
@@ -63,32 +85,55 @@ func (cu CreateOrganizationUseCase) Handler(
 			errors.ErrorCreatingUser,
 		).AppError
 	}
-	userEntityResult, err := cu.userRepo.GetByID(userId)
+	password, err := hashAndSalt(request.Password)
 	if err != nil {
+		cu.logger.Error(
+			"Error creating the hash for the user: \n", err,
+		)
+		tx.Rollback()
 		return nil, errors.NewInternalServerError(
-			"Error creating user organization",
+			"Error creating the organization",
 			"",
 			errors.ErrorCreatingUser,
 		).AppError
 	}
-	_, err = cu.userOrganizationRepo.Create(
-		&organization.UserOrganization{
+	userCreationResult, err := cu.userRepo.Create(
+		&users.User{
+			Email:          request.BillingEmail,
+			FirstName:      request.FirstName,
+			LastName:       request.LastName,
+			Hash:           password,
 			OrganizationID: organizationResult.ID,
-			UserID:         userEntityResult.ID,
-			RoleID:         roleConstant.ORGANIZATION_ADMIN,
-			//TODO send email to user with different template to the invite
-			InvitedAt: time.Now(),
-		}, tx,
+		},
 	)
 	if err != nil {
 		tx.Rollback()
 		return nil, errors.NewInternalServerError(
-			"Error creating user organization",
+			"Error creating User",
 			"",
 			errors.ErrorCreatingUser,
 		).AppError
 	}
-
+	organizationResult.CreatedBy = userCreationResult.ID
+	organizationResult, err = cu.organizationRepository.Update(organizationResult, tx)
+	if err != nil {
+		tx.Rollback()
+		return organizationResult, errors.NewInternalServerError(
+			"Error updating organization",
+			"",
+			errors.ErrorCreatingOrganization,
+		).AppError
+	}
+	//TODO send email
 	tx.Commit()
 	return organizationResult, nil
+}
+
+func hashAndSalt(pwd string) (string, error) {
+	bytePassword := []byte(pwd)
+	hash, err := bcrypt.GenerateFromPassword(bytePassword, 10)
+	if err != nil {
+		return "", err
+	}
+	return string(hash), nil
 }

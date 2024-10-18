@@ -1,1 +1,2 @@
-DROP TABLE "Users";
+DROP TABLE IF EXISTS "Users";
+DROP TABLE IF EXISTS "organizations";

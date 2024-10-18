@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"errors"
 	types "github.com/kimosapp/poc/internal/core/model/commons/types"
 	"github.com/kimosapp/poc/internal/core/model/entity/organization"
 	organization2 "github.com/kimosapp/poc/internal/core/ports/repository/organizations"
@@ -21,6 +22,21 @@ func (repo *RepositoryPostgres) GetAll() ([]organization.Organization, error) {
 		return nil, err
 	}
 	return organizations, nil
+}
+
+func (repo *RepositoryPostgres) GetByBillingEmail(email string) (organization.Organization, error) {
+	var organizationResult organization.Organization
+	err := repo.db.Model(&organization.Organization{}).Where(
+		"billing_email = ?",
+		email,
+	).First(&organizationResult).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return organization.Organization{}, nil
+	}
+	if err != nil {
+		return organization.Organization{}, err
+	}
+	return organizationResult, nil
 }
 
 func (repo *RepositoryPostgres) GetPage(
@@ -98,11 +114,14 @@ func (repo *RepositoryPostgres) Create(
 	}
 	return organization, nil
 }
-func (repo *RepositoryPostgres) Update(organization *organization.Organization) (
+func (repo *RepositoryPostgres) Update(organization *organization.Organization, tx *gorm.DB) (
 	*organization.Organization,
 	error,
 ) {
-	if err := repo.db.Save(&organization).Error; err != nil {
+	if tx == nil {
+		tx = repo.db
+	}
+	if err := tx.Save(&organization).Error; err != nil {
 		return nil, err
 	}
 	return organization, nil

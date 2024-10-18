@@ -1,10 +1,36 @@
 CREATE
 EXTENSION IF NOT EXISTS "uuid-ossp";
 
+CREATE TABLE "organizations"
+(
+    id                       uuid DEFAULT uuid_generate_v4() NOT NULL PRIMARY KEY,
+    name                     VARCHAR(255),
+    created_by               uuid,
+    slug                     VARCHAR(255),
+    billing_email            VARCHAR(255),
+    url                      VARCHAR(255),
+    about                    TEXT,
+    logo_url                 VARCHAR(255),
+    background_image_url     VARCHAR(255),
+    plan                     VARCHAR(255),
+    current_period_starts_at TIMESTAMP WITH TIME ZONE,
+    current_period_ends_at   TIMESTAMP WITH TIME ZONE,
+    subscription_id          VARCHAR(255),
+    status                   VARCHAR(255),
+    timezone                 VARCHAR(255),
+    created_at               TIMESTAMP WITH TIME ZONE        NOT NULL,
+    updated_at               TIMESTAMP WITH TIME ZONE        NOT NULL,
+    deleted_at               TIMESTAMP WITH TIME ZONE
+);
+
+CREATE UNIQUE INDEX lower_organizations_unique_idx
+    ON "organizations" (LOWER(slug::TEXT));
+
 CREATE TABLE "users"
 (
     id                             uuid    DEFAULT uuid_generate_v4() NOT NULL PRIMARY KEY,
     email                          VARCHAR(255),
+    organization_id                uuid                               NOT NULL,
     accept_terms_and_conditions    BOOLEAN DEFAULT FALSE              NOT NULL,
     hash                           VARCHAR(255),
     first_name                     VARCHAR(255),
@@ -15,6 +41,14 @@ CREATE TABLE "users"
     photo_url                      VARCHAR(255),
     timezone                       VARCHAR(255),
     phone                          VARCHAR(255),
+    role                           VARCHAR(255),
+    status                         varchar(255),
+    created_by_user_id             uuid,
+    request_password               BOOLEAN DEFAULT TRUE               NOT NULL,
+    has_password                   BOOLEAN DEFAULT FALSE              NOT NULL,
+    password_expired_at            TIMESTAMP WITH TIME ZONE,
+    invited_at                     timestamp with time zone,
+    is_active                      boolean default true               NOT NULL,
     email_verified_at              TIMESTAMP WITH TIME ZONE,
     is_locked                      BOOLEAN DEFAULT FALSE              NOT NULL,
     bad_attempts                   INTEGER DEFAULT 0                  NOT NULL,
@@ -22,20 +56,18 @@ CREATE TABLE "users"
     deleted_at                     TIMESTAMP WITH TIME ZONE
 );
 
-CREATE UNIQUE INDEX email_unique_idx
+
+CREATE INDEX idx_organizations_id
+    ON "organizations" (id);
+
+CREATE INDEX email_unique_idx
     ON "users" (LOWER(email::TEXT));
 
 CREATE INDEX idx_users_id
     ON "users" (id);
 
-CREATE UNIQUE INDEX users_email
+CREATE INDEX users_email
     ON "users" (email);
 
-
-INSERT INTO "users" (id, email, accept_terms_and_conditions, hash, first_name, last_name, created_at, updated_at,
-                     accept_terms_and_conditions_at, photo_url, timezone, phone, email_verified_at, is_locked,
-                     bad_attempts, last_login, deleted_at)
-VALUES ('a6c56de9-1fc0-4215-99a0-97753bb712d8', 'seebogado@gmail.com', true,
-        '$2a$10$NSSisPP6kwFV023oAxlBs.VIB8kTQYciSupvaWykoBiHB1Qd2aJva', 'Sebastian', 'Bogado',
-        '2024-01-07 04:54:49.847794 +00:00', '2024-01-07 05:13:57.880722 +00:00', '2024-01-07 04:54:49.847794 +00:00',
-        '', '', '', '0001-01-01 00:00:00.000000 +00:00', false, 0, '0001-01-01 00:00:00.000000 +00:00', null);
+CREATE UNIQUE INDEX users_email_tenant
+    ON "users" (email, organization_id);

@@ -13,7 +13,8 @@ type Repository interface {
 	GetByIDAndUserId(orgId string, userId string) (*organization.Organization, error)
 	GetAllByUserId(userId string) ([]organization.Organization, error)
 	Create(organization *organization.Organization, tx *gorm.DB) (*organization.Organization, error)
-	Update(organization *organization.Organization) (*organization.Organization, error)
+	Update(organization *organization.Organization, tx *gorm.DB) (*organization.Organization, error)
 	Delete(id string) error
 	BeginTransaction() *gorm.DB
+	GetByBillingEmail(email string) (organization.Organization, error)
 }
