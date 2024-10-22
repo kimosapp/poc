@@ -7,8 +7,9 @@ import (
 )
 
 type ServiceImpl struct {
-	notificationRepository.NotificationTemplateRepository
-	emailClient *client.EmailClient
+	templateRepository     notificationRepository.NotificationTemplateRepository
+	notificationRepository notificationRepository.NotificationRepository
+	emailClient            *client.EmailClient
 }
 
 func NewNotificationService(
@@ -19,9 +20,13 @@ func NewNotificationService(
 }
 
 func (ns *ServiceImpl) SendWelcomeEmail(email string) error {
+
 	return nil
 }
-func (ns *ServiceImpl) SendPasswordResetEmail(email string) error {
+func (ns *ServiceImpl) SendForgotPasswordEmail(email string, link string) error {
+	return nil
+}
+func (ns *ServiceImpl) SendResetPasswordEmail(email string, date string) error {
 	return nil
 }
 func (ns *ServiceImpl) SendOrganizationInvitationEmail(email string) error {
