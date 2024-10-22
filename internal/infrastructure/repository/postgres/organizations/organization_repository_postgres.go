@@ -2,7 +2,7 @@ package postgres
 
 import (
 	"errors"
-	types "github.com/kimosapp/poc/internal/core/model/commons/types"
+	"github.com/kimosapp/poc/internal/core/model/commons/types"
 	"github.com/kimosapp/poc/internal/core/model/entity/organization"
 	organization2 "github.com/kimosapp/poc/internal/core/ports/repository/organizations"
 	"gorm.io/gorm"
