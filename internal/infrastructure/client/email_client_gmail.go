@@ -3,8 +3,8 @@ package client
 import (
 	"github.com/kimosapp/poc/internal/core/ports/client"
 	"github.com/kimosapp/poc/internal/core/ports/logging"
+	"github.com/kimosapp/poc/internal/infrastructure/configuration"
 	mail "github.com/xhit/go-simple-mail/v2"
-	"strconv"
 )
 
 type EmailClientGmail struct {
@@ -14,28 +14,20 @@ type EmailClientGmail struct {
 }
 
 func NewEmailClientGmail(
-	from string,
-	pass string,
-	smtpHost string,
-	smtpPort string,
 	log logging.Logger,
 ) client.EmailClient {
+	config := configuration.GetGmailClientConfig()
 	server := mail.NewSMTPClient()
-	server.Host = smtpHost
-	port, err := strconv.Atoi(smtpPort)
-	if err != nil {
-		log.Error("Error converting port to int", "error", err)
-		panic(err)
-	}
-	server.Port = port
-	server.Username = from
-	server.Password = pass
+	server.Host = config.GetUrl()
+	server.Port = config.GetPort()
+	server.Username = config.GetUser()
+	server.Password = config.GetPassword()
 	server.Encryption = mail.EncryptionTLS
-	_, err = server.Connect()
+	_, err := server.Connect()
 	if err != nil {
 		log.Fatal("Error connecting to smtp server", "error", err)
 	}
-	return &EmailClientGmail{server: server, log: log, from: from}
+	return &EmailClientGmail{server: server, log: log, from: config.GetUser()}
 
 }
 

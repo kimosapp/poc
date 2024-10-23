@@ -9,14 +9,14 @@ import (
 type ServiceImpl struct {
 	templateRepository     notificationRepository.NotificationTemplateRepository
 	notificationRepository notificationRepository.NotificationRepository
-	emailClient            *client.EmailClient
+	emailClient            client.EmailClient
 }
 
 func NewNotificationService(
-
-	emailClient *client.EmailClient,
+	emailClient client.EmailClient,
+	templateRepository notificationRepository.NotificationTemplateRepository,
 ) notificationsService.Service {
-	return &ServiceImpl{emailClient: emailClient}
+	return &ServiceImpl{emailClient: emailClient, templateRepository: templateRepository}
 }
 
 func (ns *ServiceImpl) SendWelcomeEmail(email string) error {
@@ -37,4 +37,14 @@ func (ns *ServiceImpl) SendOrganizationInvitationsEmail(email string) error {
 }
 func (ns *ServiceImpl) SendOrganizationInvitationAcceptedEmail(email string) error {
 	return nil
+}
+
+func (ns *ServiceImpl) SendCreateOrganizationEmail(email string) error {
+	//Put email in an array
+	to := []string{email}
+	err := ns.emailClient.SendEmail(
+		to, []string{}, []string{}, "Welcome to kimos",
+		"Welcome to kimos",
+	)
+	return err
 }

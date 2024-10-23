@@ -12,11 +12,14 @@ import (
 	teamMemberRepository "github.com/kimosapp/poc/internal/core/ports/repository/organizations/team-member"
 	userOrganizationRepository "github.com/kimosapp/poc/internal/core/ports/repository/organizations/user-organization"
 	userRepository "github.com/kimosapp/poc/internal/core/ports/repository/users"
+	notificationsService "github.com/kimosapp/poc/internal/core/ports/service/notification"
 	organization "github.com/kimosapp/poc/internal/core/usercase/organizations"
 	usecase "github.com/kimosapp/poc/internal/core/usercase/users"
+	"github.com/kimosapp/poc/internal/infrastructure/client"
 	"github.com/kimosapp/poc/internal/infrastructure/configuration"
 	"github.com/kimosapp/poc/internal/infrastructure/db"
 	"github.com/kimosapp/poc/internal/infrastructure/logging"
+	"github.com/kimosapp/poc/internal/infrastructure/repository/postgres/notifications"
 	organizationRepositoryPostgres "github.com/kimosapp/poc/internal/infrastructure/repository/postgres/organizations"
 	roleRepositoryPostgres "github.com/kimosapp/poc/internal/infrastructure/repository/postgres/organizations/role"
 	teamRepositoryPostgres "github.com/kimosapp/poc/internal/infrastructure/repository/postgres/organizations/team"
@@ -24,6 +27,7 @@ import (
 	userOrganizationRepositoryPostgres "github.com/kimosapp/poc/internal/infrastructure/repository/postgres/organizations/user-organization"
 	userPostgres "github.com/kimosapp/poc/internal/infrastructure/repository/postgres/users"
 	"github.com/kimosapp/poc/internal/infrastructure/server"
+	"github.com/kimosapp/poc/internal/infrastructure/service/notification"
 	"github.com/kimosapp/poc/internal/middleware"
 	"log"
 	"os"
@@ -50,13 +54,19 @@ func main() {
 		log.Fatalf("failed to new logger err=%s\n", err.Error())
 	}
 
+	gmailClient := client.NewEmailClientGmail(logger)
+
 	userRepo := userPostgres.NewUserRepository(conn)
 	orgRepo := organizationRepositoryPostgres.NewOrganizationRepository(conn)
 	userOrgRepo := userOrganizationRepositoryPostgres.NewUserOrganizationRepository(conn)
 	roleRepo := roleRepositoryPostgres.NewRoleRepository(conn)
 	teamRepo := teamRepositoryPostgres.NewTeamRepository(conn)
 	teamMemberRepo := teamMemberRepositoryPostgres.NewTeamMemberRepository(conn)
-
+	notificationTemplateRepo := notifications.NewNotificationTemplateRepository(conn)
+	notificationService := notification.NewNotificationService(
+		gmailClient,
+		notificationTemplateRepo,
+	)
 	initOrganizationController(
 		instance,
 		orgRepo,
@@ -66,6 +76,7 @@ func main() {
 		teamMemberRepo,
 		userRepo,
 		middleware.NewAuthMiddleware(userRepo),
+		notificationService,
 		logger,
 	)
 
@@ -124,6 +135,7 @@ func initOrganizationController(
 	teamMemberRepo teamMemberRepository.Repository,
 	userRepo userRepository.Repository,
 	middleware *middleware.AuthMiddleware,
+	notificationService notificationsService.Service,
 	logger logging2.Logger,
 ) {
 	createOrganizationUseCase := organization.NewCreateOrganizationUseCase(
@@ -131,6 +143,7 @@ func initOrganizationController(
 		userOrgRepo,
 		roleRepo,
 		userRepo,
+		notificationService,
 		logger,
 	)
 	getOrgByUserIdAndOrgIdUseCase := organization.NewGetOrganizationByOrgIdAndUserIdUseCase(

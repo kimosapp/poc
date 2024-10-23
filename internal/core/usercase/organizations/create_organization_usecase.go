@@ -10,6 +10,7 @@ import (
 	roleRepository "github.com/kimosapp/poc/internal/core/ports/repository/organizations/role"
 	userOrganizationRepository "github.com/kimosapp/poc/internal/core/ports/repository/organizations/user-organization"
 	userR "github.com/kimosapp/poc/internal/core/ports/repository/users"
+	notificationsService "github.com/kimosapp/poc/internal/core/ports/service/notification"
 	"github.com/kimosapp/poc/internal/core/utils"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -18,6 +19,7 @@ import (
 type CreateOrganizationUseCase struct {
 	organizationRepository organizationRepository.Repository
 	userOrganizationRepo   userOrganizationRepository.Repository
+	notificationService    notificationsService.Service
 	roleRepo               roleRepository.Repository
 	userRepo               userR.Repository
 	logger                 logging.Logger
@@ -28,6 +30,7 @@ func NewCreateOrganizationUseCase(
 	userOrganizationRepo userOrganizationRepository.Repository,
 	roleRepo roleRepository.Repository,
 	userRepo userR.Repository,
+	notificationService notificationsService.Service,
 	logger logging.Logger,
 ) *CreateOrganizationUseCase {
 	return &CreateOrganizationUseCase{
@@ -35,6 +38,7 @@ func NewCreateOrganizationUseCase(
 		userOrganizationRepo:   userOrganizationRepo,
 		roleRepo:               roleRepo,
 		userRepo:               userRepo,
+		notificationService:    notificationService,
 		logger:                 logger,
 	}
 }
@@ -124,7 +128,7 @@ func (cu CreateOrganizationUseCase) Handler(
 			errors.ErrorCreatingOrganization,
 		).AppError
 	}
-	//TODO send email
+	cu.notificationService.SendCreateOrganizationEmail(request.BillingEmail)
 	tx.Commit()
 	return organizationResult, nil
 }

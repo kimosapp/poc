@@ -47,12 +47,12 @@ func GetDBConfig() *DBConfig {
 func initDBConfig() {
 	var err error
 	dbConfiguration = &DBConfig{}
-	dbConfiguration.databaseUser = os.Getenv("DB_USER")
-	dbConfiguration.databasePassword = os.Getenv("DB_PASS")
-	dbConfiguration.databaseHost = os.Getenv("DB_HOST")
 	dbConfiguration.databasePort, err = strconv.Atoi(os.Getenv("DB_PORT"))
 	if err != nil {
 		panic("Error parsing the database port")
 	}
+	dbConfiguration.databaseUser = os.Getenv("DB_USER")
+	dbConfiguration.databasePassword = os.Getenv("DB_PASS")
+	dbConfiguration.databaseHost = os.Getenv("DB_HOST")
 	dbConfiguration.databaseName = os.Getenv("DB_NAME")
 }

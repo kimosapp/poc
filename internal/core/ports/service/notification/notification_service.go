@@ -7,4 +7,5 @@ type Service interface {
 	SendOrganizationInvitationEmail(email string) error
 	SendOrganizationInvitationsEmail(email string) error
 	SendOrganizationInvitationAcceptedEmail(email string) error
+	SendCreateOrganizationEmail(email string) error
 }
